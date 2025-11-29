@@ -1,103 +1,42 @@
-# Starter code for Data Centric Programming Assignment 2025
+import os
+from typing import List, Tuple
 
-# os is a module that lets us access the file system
+def find_abc_files(root_folder: str = "abc_books") -> List[Tuple[str, int]]:
+    """
+    Recursively find all .abc files inside the abc_books folder.
 
-# Bryan Duggan likes Star Trek
-# Bryan Duggan is a great flute player
+    Returns a list of tuples: (full_file_path, book_number)
+    book_number is extracted from the immediate parent folder name.
+    """
 
-import os 
-import sqlite3
-import pandas as pd
-import mysql.connector
-# sqlite for connecting to sqlite databases
+    abc_files = []
 
-# An example of how to create a table, insert data
-# and run a select query
-def do_databasse_stuff():
+    # Walk through all subfolders and files
+    for root, dirs, files in os.walk(root_folder):
+        for file in files:
+            if file.endswith(".abc"):
+                full_path = os.path.join(root, file)
 
-    conn = sqlite3.connect('tunes.db')
-    cursor = conn.cursor()
+                # Extract book number from the parent folder
+                folder_name = os.path.basename(root)
 
-    # Create table
-    cursor.execute('CREATE TABLE IF NOT EXISTS users (name TEXT, age INTEGER)')
+                try:
+                    book_number = int(folder_name)
+                except ValueError:
+                    continue
 
-    # Insert data
-    cursor.execute('INSERT INTO users (name, age) VALUES (?, ?)', ('John', 30))
+                abc_files.append((full_path, book_number))
 
-    # Save changes
-    conn.commit()
-
-    cursor.execute('SELECT * FROM users')
-
-    # Get all results
-    results = cursor.fetchall()
-
-    # Print results
-    for row in results:
-        print(row)    
-        print(row[0])
-        print(row[1])
-    # Close
-    
-    df = pd.read_sql("SELECT * FROM users", conn)
-    print(df.head())
-    conn.close()
-
-def my_sql_database():
-    conn = mysql.connector.connect(host="localhost", user="root", database="tunepal")
-    
-    cursor = conn.cursor()
-    cursor.execute("select * from tuneindex")
-    
-    
-    while True:
-        row = cursor.fetchone()
-        if not row:
-            break
-        else:
-            print(row)
-    # results = cursor.fetchall()
-    
-    
-
-    # Print results
-    for row in results:
-        print(row)    
-    conn.close()
-    
-
-books_dir = "abc_books"
-
-def process_file(file):
-    with open(file, 'r') as f:
-        lines = f.readlines()
-    # list comprehension to strip the \n's
-    lines = [line.strip() for line in lines]
-
-    # just print the files for now
-    for line in lines:
-        # print(line)
-        pass
+    return abc_files
 
 
-# my_sql_database()
-# do_databasse_stuff()
-
-# Iterate over directories in abc_books
-for item in os.listdir(books_dir):
-    # item is the dir name, this makes it into a path
-    item_path = os.path.join(books_dir, item)
-    
-    # Check if it's a directory and has a numeric name
-    if os.path.isdir(item_path) and item.isdigit():
-        print(f"Found numbered directory: {item}")
-        
-        # Iterate over files in the numbered directory
-        for file in os.listdir(item_path):
-            # Check if file has .abc extension
-            if file.endswith('.abc'):
-                file_path = os.path.join(item_path, file)
-                print(f"  Found abc file: {file}")
-                process_file(file_path)
+# ---------------------------------------------------
+# DO NOT put this inside the function
+# This part runs ONLY when you execute the file
+# ---------------------------------------------------
+if __name__ == "__main__":
+    files = find_abc_files("abc_books")
+    for path, book in files:
+        print(f"Found in book {book}: {path}")
 
                 
