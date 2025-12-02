@@ -1,104 +1,104 @@
 # Starter code for Data Centric Programming Assignment 2025
 
-# os is a module that lets us access the file system
-
-# Bryan Duggan likes Star Trek
-# Bryan Duggan is a great flute player
-
-import os 
+import os
 import sqlite3
-import pandas as pd
+from typing import Any, Dict, List, Optional
+
 import mysql.connector
-# sqlite for connecting to sqlite databases
+import pandas as pd
 
-# An example of how to create a table, insert data
-# and run a select query
-def do_databasse_stuff():
+DB_PATH = "tunes.db"
+BOOKS_DIR = "abc_books"
 
-    conn = sqlite3.connect('tunes.db')
+
+def init_db(db_path: str = DB_PATH) -> sqlite3.Connection:
+    """Initialise the SQLite database and create the tunes table if needed."""
+
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
-    # Create table
-    cursor.execute('CREATE TABLE IF NOT EXISTS users (name TEXT, age INTEGER)')
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS tunes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            book INTEGER,
+            file_path TEXT,
+            x INTEGER,
+            title TEXT,
+            rhythm TEXT,
+            meter TEXT,
+            key TEXT,
+            raw_text TEXT
+        )
+        """
+    )
 
-    # Insert data
-    cursor.execute('INSERT INTO users (name, age) VALUES (?, ?)', ('John', 30))
+    conn.commit()
+    return conn
 
-    # Save changes
+
+def clear_tunes_table(conn: sqlite3.Connection) -> None:
+    """Delete all rows from the tunes table (used when rebuilding the DB)."""
+
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM tunes")
     conn.commit()
 
-    cursor.execute('SELECT * FROM users')
 
-    # Get all results
-    results = cursor.fetchall()
+def parse_abc_file(file_path: str, book_number: int) -> List[Dict[str, Any]]:
+    """Parse an ABC file into a list of tune dictionaries.
 
-    # Print results
-    for row in results:
-        print(row)    
-        print(row[0])
-        print(row[1])
-    # Close
-    
-    df = pd.read_sql("SELECT * FROM users", conn)
-    print(df.head())
-    conn.close()
+    This is a simple parser that looks for header lines like X:, T:, R:, M:, K:
+    and groups lines into tunes separated by new X: fields.
+    """
 
-def my_sql_database():
-    conn = mysql.connector.connect(host="localhost", user="root", database="tunepal")
-    
-    cursor = conn.cursor()
-    cursor.execute("select * from tuneindex")
-    
-    
-    while True:
-        row = cursor.fetchone()
-        if not row:
-            break
-        else:
-            print(row)
-    # results = cursor.fetchall()
-    
-    
+    with open(file_path, "r", encoding="utf-8") as f:
+        lines = [line.rstrip("\n") for line in f]
 
-    # Print results
-    for row in results:
-        print(row)    
-    conn.close()
-    
+    tunes: List[Dict[str, Any]] = []
+    current: Dict[str, Any] = {}
+    body_lines: List[str] = []
 
-books_dir = "abc_books"
+    def finish_current() -> None:
+        if current:
+            current["raw_text"] = "\n".join(body_lines)
+            tunes.append(current.copy())
 
-def process_file(file):
-    with open(file, 'r') as f:
-        lines = f.readlines()
-    # list comprehension to strip the \n's
-    lines = [line.strip() for line in lines]
-
-    # just print the files for now
     for line in lines:
-        # print(line)
-        pass
+        if line.startswith("X:"):
+            # Start of a new tune
+            finish_current()
+            current = {
+                "book": book_number,
+                "file_path": file_path,
+                "x": _safe_int(line[2:].strip()),
+                "title": None,
+                "rhythm": None,
+                "meter": None,
+                "key": None,
+            }
+            body_lines = [line]
+        elif not current:
+            # Skip lines before the first X: header
+            continue
+        else:
+            body_lines.append(line)
+            if line.startswith("T:"):
+                current["title"] = line[2:].strip()
+            elif line.startswith("R:"):
+                current["rhythm"] = line[2:].strip()
+            elif line.startswith("M:"):
+                current["meter"] = line[2:].strip()
+            elif line.startswith("K:"):
+                current["key"] = line[2:].strip()
+
+    finish_current()
+    return tunes
 
 
-# my_sql_database()
-# do_databasse_stuff()
+def _safe_int(value: str) -> Optional[int]:
 
-# Iterate over directories in abc_books
-for item in os.listdir(books_dir):
-    # item is the dir name, this makes it into a path
-    item_path = os.path.join(books_dir, item)
-    
-    # Check if it's a directory and has a numeric name
-    if os.path.isdir(item_path) and item.isdigit():
-        print(f"Found numbered directory: {item}")
-        
-        # Iterate over files in the numbered directory
-        for file in os.listdir(item_path):
-            # Check if file has .abc extension
-            if file.endswith('.abc'):
-                file_path = os.path.join(item_path, file)
-                print(f"  Found abc file: {file}")
-                process_file(file_path)
-                
-
-                
+    try:
+        return int(value)
+    except ValueError:
+        return None
