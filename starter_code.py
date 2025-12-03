@@ -6,6 +6,8 @@ from typing import Any, Dict, List, Optional
 
 import mysql.connector
 import pandas as pd
+from tabulate import tabulate
+
 
 DB_PATH = "tunes.db"
 BOOKS_DIR = "abc_books"
@@ -174,3 +176,92 @@ def load_tunes_dataframe(db_path: str = DB_PATH) -> pd.DataFrame:
     df = pd.read_sql("SELECT * FROM tunes", conn)
     conn.close()
     return df
+
+
+def get_tunes_by_book(df: pd.DataFrame, book_number: int) -> pd.DataFrame:
+    """Get all tunes from a specific book."""
+
+    return df[df["book"] == book_number]
+
+
+def get_tunes_by_type(df: pd.DataFrame, tune_type: str) -> pd.DataFrame:
+    """Get all tunes of a specific type (uses the rhythm column)."""
+
+    return df[df["rhythm"].str.lower() == tune_type.lower()]
+
+
+def search_tunes(df: pd.DataFrame, search_term: str) -> pd.DataFrame:
+    """Search tunes by title case insensitive."""
+
+    mask = df["title"].fillna("").str.contains(search_term, case=False, na=False)
+    return df[mask]
+
+
+def _print_results(df: pd.DataFrame, max_rows: int = 20) -> None:
+    if df.empty:
+        print("No results.")
+        return
+
+    
+    if "raw_text" in df.columns:
+        df = df.drop(columns=["raw_text"])
+
+    print(tabulate(df.head(max_rows), headers="keys", tablefmt="fancy_grid"))
+
+
+
+
+def run_menu(db_path: str = DB_PATH) -> None:
+    """Simple text-based user interface for querying the tunes database."""
+
+    while True:
+        print("\n=== ABC Tunes Database ===")
+        print("1. (Re)build database from abc_books")
+        print("2. Show tunes by book")
+        print("3. Show tunes by type (rhythm)")
+        print("4. Search tunes by title")
+        print("5. Show basic stats (tunes per book)")
+        print("0. Quit")
+
+        choice = input("Enter choice: ").strip()
+
+        if choice == "1":
+            build_database_from_files()
+        elif choice == "2":
+            try:
+                book_str = input("Enter book number: ").strip()
+                book_number = int(book_str)
+            except ValueError:
+                print("Invalid book number.")
+                continue
+            df = load_tunes_dataframe(db_path)
+            result = get_tunes_by_book(df, book_number)
+            _print_results(result)
+        elif choice == "3":
+            tune_type = input("Enter tune type (e.g. reel, jig): ").strip()
+            df = load_tunes_dataframe(db_path)
+            result = get_tunes_by_type(df, tune_type)
+            _print_results(result)
+        elif choice == "4":
+            term = input("Enter search term for title: ").strip()
+            df = load_tunes_dataframe(db_path)
+            result = search_tunes(df, term)
+            _print_results(result)
+        elif choice == "5":
+            df = load_tunes_dataframe(db_path)
+            if df.empty:
+                print("Database is empty. Build it first.")
+            else:
+                stats = df.groupby("book")["id"].count().rename("tune_count").reset_index()
+                _print_results(stats)
+        elif choice == "0":
+            print("Goodbye!")
+            break
+        else:
+            print("Unknown choice, please try again.")
+
+
+if __name__ == "__main__":
+    # Entry point for running the assignment code.
+    # You can comment out run_menu and call individual functions when testing.
+    run_menu()
