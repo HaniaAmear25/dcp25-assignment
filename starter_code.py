@@ -12,6 +12,7 @@ BOOKS_DIR = "abc_books"
 
 
 def init_db(db_path: str = DB_PATH) -> sqlite3.Connection:
+    """Initialise the SQLite database and create the tunes table if needed."""
 
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
@@ -37,7 +38,7 @@ def init_db(db_path: str = DB_PATH) -> sqlite3.Connection:
 
 
 def clear_tunes_table(conn: sqlite3.Connection) -> None:
-    """Delete all rows from the tunes table ."""
+    """Delete all rows from the tunes table (used when rebuilding the DB)."""
 
     cursor = conn.cursor()
     cursor.execute("DELETE FROM tunes")
@@ -47,7 +48,7 @@ def clear_tunes_table(conn: sqlite3.Connection) -> None:
 def parse_abc_file(file_path: str, book_number: int) -> List[Dict[str, Any]]:
     """Parse an ABC file into a list of tune dictionaries.
 
-    looks for header lines like X:, T:, R:, M:, K:
+    This is a simple parser that looks for header lines like X:, T:, R:, M:, K:
     and groups lines into tunes separated by new X: fields.
     """
 
@@ -96,11 +97,13 @@ def parse_abc_file(file_path: str, book_number: int) -> List[Dict[str, Any]]:
 
 
 def _safe_int(value: str) -> Optional[int]:
+    """Convert a string to int, returning None if it fails."""
 
     try:
         return int(value)
     except ValueError:
         return None
+
 
 def insert_tunes(conn: sqlite3.Connection, tunes: List[Dict[str, Any]]) -> None:
     """Insert a list of tune dictionaries into the tunes table."""
@@ -131,7 +134,7 @@ def insert_tunes(conn: sqlite3.Connection, tunes: List[Dict[str, Any]]) -> None:
 
 
 def build_database_from_files(books_dir: str = BOOKS_DIR, db_path: str = DB_PATH) -> None:
-    """ parse ABC files and populate the SQLite database."""
+    """Traverse abc_books, parse ABC files and populate the SQLite database."""
 
     conn = init_db(db_path)
     clear_tunes_table(conn)
@@ -141,15 +144,15 @@ def build_database_from_files(books_dir: str = BOOKS_DIR, db_path: str = DB_PATH
 
     # Iterate over directories in abc_books
     for item in os.listdir(books_dir):
-        
+        # item is the dir name, this makes it into a path
         item_path = os.path.join(books_dir, item)
 
-        # Check if directory and has a numeric name
+        # Check if it's a directory and has a numeric name
         if os.path.isdir(item_path) and item.isdigit():
             book_number = int(item)
             print(f"Found numbered directory (book): {item}")
 
-            
+            # Iterate over files in the numbered directory
             for file_name in os.listdir(item_path):
                 # Check if file has .abc extension
                 if file_name.endswith(".abc"):
@@ -162,3 +165,12 @@ def build_database_from_files(books_dir: str = BOOKS_DIR, db_path: str = DB_PATH
 
     conn.close()
     print(f"Finished. Processed {total_files} files and inserted {total_tunes} tunes.")
+
+
+def load_tunes_dataframe(db_path: str = DB_PATH) -> pd.DataFrame:
+    """Load all tunes from the SQLite database into a pandas DataFrame."""
+
+    conn = sqlite3.connect(db_path)
+    df = pd.read_sql("SELECT * FROM tunes", conn)
+    conn.close()
+    return df
