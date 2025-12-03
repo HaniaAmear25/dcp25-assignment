@@ -12,7 +12,6 @@ BOOKS_DIR = "abc_books"
 
 
 def init_db(db_path: str = DB_PATH) -> sqlite3.Connection:
-    """Initialise the SQLite database and create the tunes table if needed."""
 
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
@@ -38,7 +37,7 @@ def init_db(db_path: str = DB_PATH) -> sqlite3.Connection:
 
 
 def clear_tunes_table(conn: sqlite3.Connection) -> None:
-    """Delete all rows from the tunes table (used when rebuilding the DB)."""
+    """Delete all rows from the tunes table ."""
 
     cursor = conn.cursor()
     cursor.execute("DELETE FROM tunes")
@@ -48,7 +47,7 @@ def clear_tunes_table(conn: sqlite3.Connection) -> None:
 def parse_abc_file(file_path: str, book_number: int) -> List[Dict[str, Any]]:
     """Parse an ABC file into a list of tune dictionaries.
 
-    This is a simple parser that looks for header lines like X:, T:, R:, M:, K:
+    looks for header lines like X:, T:, R:, M:, K:
     and groups lines into tunes separated by new X: fields.
     """
 
@@ -102,3 +101,64 @@ def _safe_int(value: str) -> Optional[int]:
         return int(value)
     except ValueError:
         return None
+
+def insert_tunes(conn: sqlite3.Connection, tunes: List[Dict[str, Any]]) -> None:
+    """Insert a list of tune dictionaries into the tunes table."""
+
+    cursor = conn.cursor()
+    rows = [
+        (
+            tune.get("book"),
+            tune.get("file_path"),
+            tune.get("x"),
+            tune.get("title"),
+            tune.get("rhythm"),
+            tune.get("meter"),
+            tune.get("key"),
+            tune.get("raw_text"),
+        )
+        for tune in tunes
+    ]
+
+    cursor.executemany(
+        """
+        INSERT INTO tunes (book, file_path, x, title, rhythm, meter, key, raw_text)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        rows,
+    )
+    conn.commit()
+
+
+def build_database_from_files(books_dir: str = BOOKS_DIR, db_path: str = DB_PATH) -> None:
+    """ parse ABC files and populate the SQLite database."""
+
+    conn = init_db(db_path)
+    clear_tunes_table(conn)
+
+    total_files = 0
+    total_tunes = 0
+
+    # Iterate over directories in abc_books
+    for item in os.listdir(books_dir):
+        
+        item_path = os.path.join(books_dir, item)
+
+        # Check if directory and has a numeric name
+        if os.path.isdir(item_path) and item.isdigit():
+            book_number = int(item)
+            print(f"Found numbered directory (book): {item}")
+
+            
+            for file_name in os.listdir(item_path):
+                # Check if file has .abc extension
+                if file_name.endswith(".abc"):
+                    file_path = os.path.join(item_path, file_name)
+                    print(f"  Parsing abc file: {file_name}")
+                    tunes = parse_abc_file(file_path, book_number)
+                    insert_tunes(conn, tunes)
+                    total_files += 1
+                    total_tunes += len(tunes)
+
+    conn.close()
+    print(f"Finished. Processed {total_files} files and inserted {total_tunes} tunes.")
