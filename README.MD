@@ -9,6 +9,9 @@ Lecturer: Bryan Duggan
 
 # Screenshots
 
+![image](images/abc.png)
+
+
 
 # Description of the project
 A Python application for managing traditional music tunes in ABC notation. Parses ABC files, stores them in SQLite, and provides an interactive interface to search and analyze tunes by book, type, or title.
@@ -46,6 +49,7 @@ filtering, case insensitive searches(strings),stats.
 
 
 # References
+Bryan Duggan Lecture Notes
 Python Tabulate:
 https://www.datacamp.com/tutorial/python-tabulate
 Accessing SQLite Databases Using Python and Pandas:
@@ -66,6 +70,7 @@ I'm particularly proud of integrating multiple technologies:file parsing, SQLite
 # What I learned
 
 This assignment taught me far more than just Python programming. I learned the fundamentals of version control with Git and GitHub, which was completely new territory for me. Understanding how to commit changes, write meaningful commit messages, and push to a repository gave me insight into how professional developers work collaboratively. The hackathon experience also taught me that asking for help and learning from more experienced developers is not only okay but essential for growth.
+
 
 
 
