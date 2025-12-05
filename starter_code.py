@@ -1,23 +1,22 @@
-# Starter code for Data Centric Programming Assignment 2025
-
 import os
-import sqlite3
+import sqlite3 #database management
 from typing import Any, Dict, List, Optional
 
-import mysql.connector
-import pandas as pd
-from tabulate import tabulate
+
+import pandas as pd #data anallysis
+from tabulate import tabulate #tabulate data
 
 
-DB_PATH = "tunes.db"
-BOOKS_DIR = "abc_books"
+DB_PATH = "tunes.db" #databse file location
+BOOKS_DIR = "abc_books" #where the abc files are stored
 
-
+#creates n connects to sqlite database and sets up  schema
+#initialise database(parametername:type hint = ) returns sqlite connection
 def init_db(db_path: str = DB_PATH) -> sqlite3.Connection:
-    """Initialise the SQLite database and create the tunes table if needed."""
+    """ create the tunes table if needed."""
 
     conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
+    cursor = conn.cursor() #curson object to execute sql commands
 
     cursor.execute(
         """
@@ -39,12 +38,14 @@ def init_db(db_path: str = DB_PATH) -> sqlite3.Connection:
     return conn
 
 
+#deletes all data from tunes table
+#takes database connection as parameter
 def clear_tunes_table(conn: sqlite3.Connection) -> None:
     """Delete all rows from the tunes table (used when rebuilding the DB)."""
 
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM tunes")
-    conn.commit()
+    cursor.execute("DELETE FROM tunes") #deletes evry row in tunes tabel
+    conn.commit() #saves
 
 
 def parse_abc_file(file_path: str, book_number: int) -> List[Dict[str, Any]]:
@@ -53,23 +54,27 @@ def parse_abc_file(file_path: str, book_number: int) -> List[Dict[str, Any]]:
     This is a simple parser that looks for header lines like X:, T:, R:, M:, K:
     and groups lines into tunes separated by new X: fields.
     """
-
+    #reads file removes newline char from end of each line
     with open(file_path, "r", encoding="utf-8") as f:
         lines = [line.rstrip("\n") for line in f]
 
+    #list to store all parsed tunes
     tunes: List[Dict[str, Any]] = []
-    current: Dict[str, Any] = {}
-    body_lines: List[str] = []
+    current: Dict[str, Any] = {} #dictionary hold data for tune parsed
+    body_lines: List[str] = [] #;ist collecting raw lines of tune
 
+    #saves current tune to list
+    #appends copy of current tunes dict to tunes list
     def finish_current() -> None:
         if current:
             current["raw_text"] = "\n".join(body_lines)
             tunes.append(current.copy())
 
+    #if line starts at X: new tune
     for line in lines:
         if line.startswith("X:"):
             # Start of a new tune
-            finish_current()
+            finish_current() #saves prev tune
             current = {
                 "book": book_number,
                 "file_path": file_path,
@@ -176,6 +181,7 @@ def load_tunes_dataframe(db_path: str = DB_PATH) -> pd.DataFrame:
     df = pd.read_sql("SELECT * FROM tunes", conn)
     conn.close()
     return df
+    
 
 
 def get_tunes_by_book(df: pd.DataFrame, book_number: int) -> pd.DataFrame:
@@ -215,8 +221,8 @@ def run_menu(db_path: str = DB_PATH) -> None:
     """Simple text-based user interface for querying the tunes database."""
 
     while True:
-        print("\n=== ABC Tunes Database ===")
-        print("1. (Re)build database from abc_books")
+        print("\nABC Tunes Database ")
+        print("1. Rebuild database from abc_books")
         print("2. Show tunes by book")
         print("3. Show tunes by type (rhythm)")
         print("4. Search tunes by title")
@@ -262,6 +268,5 @@ def run_menu(db_path: str = DB_PATH) -> None:
 
 
 if __name__ == "__main__":
-    # Entry point for running the assignment code.
-    # You can comment out run_menu and call individual functions when testing.
+    
     run_menu()
