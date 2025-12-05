@@ -65,11 +65,13 @@ https://www.geeksforgeeks.org/python/type-hints-in-python/
 
 # What I am most proud of in the assignment
 I didn't know how to use GitHub before starting this assignment. I attended a hackathon by Give(a)Go where there were developers at many different stages of their careers. My friends and I were the youngest and least experienced developers there, but we decided to work on this assignment during the hackathon. The more experienced developers were incredibly helpful and patient, teaching us Git basics, debugging strategies, and best practices for structuring code. This support allowed me to push through the challenging parts and complete a project I wouldn't have thought possible at the start.
-I'm particularly proud of integrating multiple technologies:file parsing, SQLite, pandas, and tabulate into a cohesive application that actually works. Successfully parsing complex ABC notation files with varying formats and extracting structured metadata felt like a real achievement, especially considering I was learning as I went. I'm also proud of implementing the clear_tunes_table() function after realizing through testing that duplicate data was being created when rebuilding the database—identifying that problem and solving it showed me the importance of testing and thinking through edge cases.
+
+I'm particularly proud of integrating multiple technologies:file parsing, SQLite, pandas, and tabulate into a cohesive application that actually works. Successfully parsing complex ABC notation files with varying formats and extracting structured metadata felt like a real achievement, especially considering I was learning as I went. I'm also proud of implementing the clear_tunes_table() function after realizing through testing that duplicate data was being created when rebuilding the database, identifying that problem and solving it showed me the importance of testing and thinking through edge cases.
 
 # What I learned
 
 This assignment taught me far more than just Python programming. I learned the fundamentals of version control with Git and GitHub, which was completely new territory for me. Understanding how to commit changes, write meaningful commit messages, and push to a repository gave me insight into how professional developers work collaboratively. The hackathon experience also taught me that asking for help and learning from more experienced developers is not only okay but essential for growth.
+
 
 
 
