@@ -177,7 +177,7 @@ def build_database_from_files(books_dir: str = BOOKS_DIR, db_path: str = DB_PATH
 def load_tunes_dataframe(db_path: str = DB_PATH) -> pd.DataFrame:
     """Load all tunes from the SQLite database into a pandas DataFrame."""
 
-    conn = sqlite3.connect(db_path)
+    conn = init_db(db_path)
     df = pd.read_sql("SELECT * FROM tunes", conn)
     conn.close()
     return df
@@ -193,7 +193,9 @@ def get_tunes_by_book(df: pd.DataFrame, book_number: int) -> pd.DataFrame:
 def get_tunes_by_type(df: pd.DataFrame, tune_type: str) -> pd.DataFrame:
     """Get all tunes of a specific type (uses the rhythm column)."""
 
-    return df[df["rhythm"].str.lower() == tune_type.lower()]
+    return df[
+        df["rhythm"].fillna("").str.lower() == tune_type.lower()
+    ]
 
 
 def search_tunes(df: pd.DataFrame, search_term: str) -> pd.DataFrame:
@@ -208,11 +210,24 @@ def _print_results(df: pd.DataFrame, max_rows: int = 20) -> None:
         print("No results.")
         return
 
-    
+    total_results = len(df)
+
     if "raw_text" in df.columns:
         df = df.drop(columns=["raw_text"])
 
-    print(tabulate(df.head(max_rows), headers="keys", tablefmt="fancy_grid"))
+    print(f"\nFound {total_results} result(s).")
+
+    if total_results > max_rows:
+        print(f"Showing first {max_rows} results:\n")
+
+    print(
+        tabulate(
+            df.head(max_rows),
+            headers="keys",
+            tablefmt="fancy_grid",
+            showindex=False
+        )
+    )
 
 
 
