@@ -211,3 +211,6 @@ tunes.db
 .venv/
 __pycache__/
 *.pyc
+.Rproj.user/
+.RData
+.Rhistory
